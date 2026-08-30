@@ -26,9 +26,9 @@ causesOvertake :: BetaRedex -> Bool
 causesOvertake (BetaRedex var b arg) =
     check b
     where
-        check (Variable _) = False
-        check (Application m n) = check m || check n
-        check (Abstraction c t) = True -- TODO
+        check (Variable _)             = False
+        check (Application left right) = check left || check right
+        check (Abstraction c t)        = True -- TODO
 
 next :: Char -> Char
 next 'a' = 'z'
@@ -36,14 +36,18 @@ next x = chr (ord x + 1)
 
 collectUsed :: Term -> [Char]
 collectUsed (Variable c)       = [c] 
-collectUsed (Abstraction c t)  = [c] ++ collectUsed t
-collectUsed (Application m n) = collectUsed m ++ collectUsed n
+collectUsed (Abstraction c t)  = c : collectUsed t
+collectUsed (Application left right)  = collectUsed left ++ collectUsed right
 
 rename :: Term -> Char -> Char -> [Char] -> Term
+rename (Application left right) new old used = Application (rename left new old used) (rename right new old used)
+rename (Variable v) new old _
+    | v == old = Variable new
+    | otherwise = Variable v
 rename term new old used = term -- TODO
 
 alphaConvert :: Term -> Char -> Term
-alphaConvert (Abstraction old t) new = Abstraction new (rename t new old ([old] ++ collectUsed(t)))
+alphaConvert (Abstraction old t) new = Abstraction new (rename t new old (new : old : collectUsed t))
 alphaConvert term _                  = term
 
 betaReduction :: p
