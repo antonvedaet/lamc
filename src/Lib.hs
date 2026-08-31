@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
 module Lib
     ( someFunc
     , alphaConvert
