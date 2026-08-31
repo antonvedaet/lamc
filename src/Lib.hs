@@ -35,23 +35,25 @@ causesOvertake (BetaRedex var b arg) =
 
 next :: Char -> Char
 next 'z' = 'a'
-next x = chr (ord x + 1)
+next x   = chr (ord x + 1)
 
 collectUsed :: Term -> [Char]
-collectUsed (Variable c)       = [c] 
-collectUsed (Abstraction c t)  = c : collectUsed t
+collectUsed (Variable c)              = [c] 
+collectUsed (Abstraction c t)         = c : collectUsed t
 collectUsed (Application left right)  = collectUsed left ++ collectUsed right
 
 rename :: Term -> Char -> Char -> [Char] -> Term
 rename (Application left right) new old used = Application (rename left new old used) (rename right new old used)
 rename (Variable v) new old _
-    | v == old = Variable new
-    | otherwise = Variable v
+    | v == old      = Variable new
+    | otherwise     = Variable v
 rename (Abstraction binder term) new old used
     | binder == old = Abstraction binder term
-    | binder == new = let fresh = fix (\f n -> if n `notElem` used then n else f $ next n) 'a' 
-    in Abstraction fresh (rename term fresh binder (fresh : used))
-    | otherwise = Abstraction binder (rename term new old used)
+    | binder == new =
+        let fresh = fix (\f n -> if n `notElem` used then n else f $ next n) 'a'
+            inner = rename term fresh binder (fresh : used)
+        in Abstraction fresh (rename inner new old (fresh : used))
+    | otherwise     = Abstraction binder (rename term new old used)
 
 alphaConvert :: Term -> Char -> Term
 alphaConvert (Abstraction old t) new = Abstraction new (rename t new old (new : old : collectUsed t))
