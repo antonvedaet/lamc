@@ -2,15 +2,18 @@
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 module Lib
     ( someFunc
+    , alphaConvert
+    , Term(..)
     ) where
 
 import Data.Char (ord, chr)
+import Data.Function (fix)
 
 data Term =
     Variable    Char
   | Abstraction Char Term
   | Application Term Term 
-  deriving(Show)
+  deriving(Show, Eq)
   
 data BetaRedex = BetaRedex
     { boundVar :: Char
@@ -31,7 +34,7 @@ causesOvertake (BetaRedex var b arg) =
         check (Abstraction c t)        = True -- TODO
 
 next :: Char -> Char
-next 'a' = 'z'
+next 'z' = 'a'
 next x = chr (ord x + 1)
 
 collectUsed :: Term -> [Char]
@@ -44,7 +47,11 @@ rename (Application left right) new old used = Application (rename left new old 
 rename (Variable v) new old _
     | v == old = Variable new
     | otherwise = Variable v
-rename term new old used = term -- TODO
+rename (Abstraction binder term) new old used
+    | binder == old = Abstraction binder term
+    | binder == new = let fresh = fix (\f n -> if n `notElem` used then n else f $ next n) 'a' 
+    in Abstraction fresh (rename term fresh binder (fresh : used))
+    | otherwise = Abstraction binder (rename term new old used)
 
 alphaConvert :: Term -> Char -> Term
 alphaConvert (Abstraction old t) new = Abstraction new (rename t new old (new : old : collectUsed t))
