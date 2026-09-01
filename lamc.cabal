@@ -7,11 +7,11 @@ cabal-version: 2.2
 name:           lamc
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/lamc#readme>
-homepage:       https://github.com/githubuser/lamc#readme
-bug-reports:    https://github.com/githubuser/lamc/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2026 Author name here
+homepage:       https://github.com/antonvedaet/lamc#readme
+bug-reports:    https://github.com/antonvedaet/lamc/issues
+author:         Anton Vedernikov
+maintainer:     antonvedernikov2003@gmail.com
+copyright:      2026 Anton Vedernikov
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
@@ -21,15 +21,16 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/lamc
+  location: https://github.com/antonvedaet/lamc
 
 library
   exposed-modules:
       Lib
   other-modules:
-      Paths_lamc
-  autogen-modules:
-      Paths_lamc
+      Lambda.Named
+      Lambda.Term
+      Lambda.DeBruijn
+      Lambda.Eval
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints

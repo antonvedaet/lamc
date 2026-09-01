@@ -1,10 +1,10 @@
 name:                lamc
 version:             0.1.0.0
-github:              "githubuser/lamc"
+github:              "antonvedaet/lamc"
 license:             BSD-3-Clause
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2026 Author name here"
+author:              "Anton Vedernikov"
+maintainer:          "antonvedernikov2003@gmail.com"
+copyright:           "2026 Anton Vedernikov"
 
 extra-source-files:
 - README.md
@@ -35,6 +35,15 @@ ghc-options:
 
 library:
   source-dirs: src
+
+  exposed-modules:
+  - Lib
+
+  other-modules:
+  - Lambda.Named
+  - Lambda.Term
+  - Lambda.DeBruijn
+  - Lambda.Eval
 
 executables:
   lamc-exe:
