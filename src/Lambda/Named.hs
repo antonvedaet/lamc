@@ -6,19 +6,19 @@ module Lambda.Named
 
 import Data.Char (chr, ord)
 import Data.Function (fix)
-import Lambda.Term
+import Lambda.Term (BetaRedex (..), Term (..))
 
 asRedex :: Term -> Maybe BetaRedex
 asRedex (Application (Abstraction v b) a) = Just (BetaRedex v b a)
 asRedex _ = Nothing
 
-causesOvertake :: BetaRedex -> Bool
-causesOvertake (BetaRedex var b arg) =
-    check b
-    where
-        check (Variable _) = False
-        check (Application left right) = check left || check right
-        check (Abstraction binder term) = True -- TODO
+-- causesOvertake :: BetaRedex -> Bool
+-- causesOvertake (BetaRedex var b arg) =
+--     check b
+--     where
+--         check (Variable _) = False
+--         check (Application left right) = check left || check right
+--         check (Abstraction binder term) = True -- TODO
 
 next :: Char -> Char
 next 'z' = 'a'
@@ -46,5 +46,21 @@ alphaConvert :: Term -> Char -> Term
 alphaConvert (Abstraction old t) new = Abstraction new (rename t new old (new : old : collectUsed t))
 alphaConvert term _ = term
 
-betaReduction :: p
-betaReduction = betaReduction -- TODO
+freeVars :: Term -> [Char]
+freeVars (Variable c) = [c]
+freeVars (Abstraction c t) = (filter (/= c) (freeVars t))
+freeVars (Application left right) = (freeVars left) ++ (freeVars right)
+
+substitute :: Char -> Term -> Term -> Term
+substitute v (Variable b) a
+    | v == b = a
+    | otherwise = Variable b
+substitute v (Application left right) a = (Application (substitute v left a) (substitute v right a))
+substitute v (Abstraction binder inner) a
+    | v == binder = Abstraction v inner
+    -- \| binder `elem` (freeVars a) =
+    --     Abstraction binder (substitute v (alphaConvert inner (next binder)) a) -- TODO
+    | otherwise = Abstraction binder (substitute v inner a)
+
+betaReduction :: BetaRedex -> Term
+betaReduction (BetaRedex v b a) = substitute v b a
