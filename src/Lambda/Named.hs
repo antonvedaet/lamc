@@ -12,14 +12,6 @@ asRedex :: Term -> Maybe BetaRedex
 asRedex (Application (Abstraction v b) a) = Just (BetaRedex v b a)
 asRedex _ = Nothing
 
--- causesOvertake :: BetaRedex -> Bool
--- causesOvertake (BetaRedex var b arg) =
---     check b
---     where
---         check (Variable _) = False
---         check (Application left right) = check left || check right
---         check (Abstraction binder term) = True -- TODO
-
 next :: Char -> Char
 next 'z' = 'a'
 next x = chr (ord x + 1)
@@ -56,10 +48,15 @@ substitute v (Variable b) a
     | v == b = a
     | otherwise = Variable b
 substitute v (Application left right) a = (Application (substitute v left a) (substitute v right a))
-substitute v (Abstraction binder inner) a
-    | v == binder = Abstraction v inner
-    -- \| binder `elem` (freeVars a) =
-    --     Abstraction binder (substitute v (alphaConvert inner (next binder)) a) -- TODO
+substitute v abst@(Abstraction binder inner) a
+    | v == binder = Abstraction binder inner
+    | binder `elem` (freeVars a) =
+        let used = collectUsed inner ++ collectUsed a ++ [v, binder]
+            fresh = fix (\f n -> if n `notElem` used then n else f $ next n) binder
+            renamed = alphaConvert abst fresh
+         in case renamed of
+                Abstraction fresh' inner' -> Abstraction fresh' (substitute v inner' a)
+                _ -> error "alphaConvert returned a non-abstraction"
     | otherwise = Abstraction binder (substitute v inner a)
 
 betaReduction :: BetaRedex -> Term

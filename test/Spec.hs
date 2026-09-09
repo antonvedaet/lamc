@@ -376,3 +376,144 @@ spec = do
                 `shouldBe` Application
                     (Variable 'x')
                     (Variable 'y')
+
+    describe "betaReduction" $ do
+        it "substitutes the argument for the bound variable" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        (Variable 'x')
+                        (Variable 'y')
+                    )
+                `shouldBe` Variable 'y'
+
+        it "leaves variables that are not bound by the redex unchanged" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        (Variable 'z')
+                        (Variable 'y')
+                    )
+                `shouldBe` Variable 'z'
+
+        it "substitutes through both sides of an application" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        ( Application
+                            (Variable 'x')
+                            ( Application
+                                (Variable 'z')
+                                (Variable 'x')
+                            )
+                        )
+                        (Variable 'y')
+                    )
+                `shouldBe` Application
+                    (Variable 'y')
+                    ( Application
+                        (Variable 'z')
+                        (Variable 'y')
+                    )
+
+        it "can substitute a compound argument" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        ( Application
+                            (Variable 'x')
+                            (Variable 'z')
+                        )
+                        ( Abstraction
+                            'y'
+                            (Variable 'y')
+                        )
+                    )
+                `shouldBe` Application
+                    ( Abstraction
+                        'y'
+                        (Variable 'y')
+                    )
+                    (Variable 'z')
+
+        it "does not substitute under an abstraction that rebinds the same variable" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        ( Abstraction
+                            'x'
+                            ( Application
+                                (Variable 'x')
+                                (Variable 'z')
+                            )
+                        )
+                        (Variable 'y')
+                    )
+                `shouldBe` Abstraction
+                    'x'
+                    ( Application
+                        (Variable 'x')
+                        (Variable 'z')
+                    )
+
+        it "substitutes under an abstraction with a different binder" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        ( Abstraction
+                            'z'
+                            ( Application
+                                (Variable 'x')
+                                (Variable 'z')
+                            )
+                        )
+                        (Variable 'y')
+                    )
+                `shouldBe` Abstraction
+                    'z'
+                    ( Application
+                        (Variable 'y')
+                        (Variable 'z')
+                    )
+
+        it "renames an inner binder to avoid capturing a free variable from the argument" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        ( Abstraction
+                            'y'
+                            (Variable 'x')
+                        )
+                        (Variable 'y')
+                    )
+                `shouldBe` Abstraction
+                    'z'
+                    (Variable 'y')
+
+        it "chooses a later fresh binder when the next name is already used" $
+            do
+                betaReduction
+                    ( BetaRedex
+                        'x'
+                        ( Abstraction
+                            'y'
+                            ( Application
+                                (Variable 'x')
+                                (Variable 'z')
+                            )
+                        )
+                        (Variable 'y')
+                    )
+                `shouldBe` Abstraction
+                    'a'
+                    ( Application
+                        (Variable 'y')
+                        (Variable 'z')
+                    )
