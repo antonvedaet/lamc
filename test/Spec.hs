@@ -14,7 +14,7 @@ spec = do
                 alphaConvert
                     (Abstraction 'x' (Variable 'x'))
                     'y'
-                `shouldBe` Abstraction 'y' (Variable 'y')
+                `shouldBe` Just (Abstraction 'y' (Variable 'y'))
 
         it "does not rename free variables" $
             do
@@ -27,12 +27,27 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
-                    ( Application
-                        (Variable 'y')
-                        (Variable 'z')
+                `shouldBe` Just
+                    ( Abstraction
+                        'y'
+                        ( Application
+                            (Variable 'y')
+                            (Variable 'z')
+                        )
                     )
+
+        it "rejects a new binder that would capture a free variable" $
+            do
+                alphaConvert
+                    ( Abstraction
+                        'x'
+                        ( Application
+                            (Variable 'x')
+                            (Variable 'y')
+                        )
+                    )
+                    'y'
+                `shouldBe` Nothing
 
         it "does not rename variables hidden by nested binder" $
             do
@@ -45,11 +60,13 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
+                `shouldBe` Just
                     ( Abstraction
-                        'x'
-                        (Variable 'x')
+                        'y'
+                        ( Abstraction
+                            'x'
+                            (Variable 'x')
+                        )
                     )
 
         it "avoids variable capture" $
@@ -63,11 +80,13 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
+                `shouldBe` Just
                     ( Abstraction
-                        'a'
-                        (Variable 'y')
+                        'y'
+                        ( Abstraction
+                            'a'
+                            (Variable 'y')
+                        )
                     )
 
         it "renames every bound occurrence in a nested application" $
@@ -84,13 +103,15 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
-                    ( Application
-                        (Variable 'y')
+                `shouldBe` Just
+                    ( Abstraction
+                        'y'
                         ( Application
                             (Variable 'y')
-                            (Variable 'z')
+                            ( Application
+                                (Variable 'y')
+                                (Variable 'z')
+                            )
                         )
                     )
 
@@ -108,14 +129,16 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
-                    ( Application
-                        ( Abstraction
-                            'x'
-                            (Variable 'x')
+                `shouldBe` Just
+                    ( Abstraction
+                        'y'
+                        ( Application
+                            ( Abstraction
+                                'x'
+                                (Variable 'x')
+                            )
+                            (Variable 'y')
                         )
-                        (Variable 'y')
                     )
 
         it "avoids capture when conflicting abstraction is inside application" $
@@ -135,17 +158,19 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
-                    ( Application
-                        ( Abstraction
-                            'a'
-                            ( Application
-                                (Variable 'y')
-                                (Variable 'a')
+                `shouldBe` Just
+                    ( Abstraction
+                        'y'
+                        ( Application
+                            ( Abstraction
+                                'a'
+                                ( Application
+                                    (Variable 'y')
+                                    (Variable 'a')
+                                )
                             )
+                            (Variable 'y')
                         )
-                        (Variable 'y')
                     )
 
         it "avoids capture in both branches of an application" $
@@ -165,16 +190,18 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
-                    ( Application
-                        ( Abstraction
-                            'a'
-                            (Variable 'y')
-                        )
-                        ( Abstraction
-                            'a'
-                            (Variable 'y')
+                `shouldBe` Just
+                    ( Abstraction
+                        'y'
+                        ( Application
+                            ( Abstraction
+                                'a'
+                                (Variable 'y')
+                            )
+                            ( Abstraction
+                                'a'
+                                (Variable 'y')
+                            )
                         )
                     )
 
@@ -195,15 +222,17 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
+                `shouldBe` Just
                     ( Abstraction
-                        'z'
+                        'y'
                         ( Abstraction
-                            'x'
-                            ( Application
-                                (Variable 'x')
-                                (Variable 'z')
+                            'z'
+                            ( Abstraction
+                                'x'
+                                ( Application
+                                    (Variable 'x')
+                                    (Variable 'z')
+                                )
                             )
                         )
                     )
@@ -222,13 +251,15 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
-                    ( Application
-                        (Variable 'y')
-                        ( Abstraction
-                            'x'
-                            (Variable 'x')
+                `shouldBe` Just
+                    ( Abstraction
+                        'y'
+                        ( Application
+                            (Variable 'y')
+                            ( Abstraction
+                                'x'
+                                (Variable 'x')
+                            )
                         )
                     )
 
@@ -252,17 +283,19 @@ spec = do
                         )
                     )
                     'z'
-                `shouldBe` Abstraction
-                    'z'
+                `shouldBe` Just
                     ( Abstraction
-                        'a'
+                        'z'
                         ( Abstraction
-                            'b'
-                            ( Application
-                                (Variable 'z')
+                            'a'
+                            ( Abstraction
+                                'b'
                                 ( Application
-                                    (Variable 'a')
-                                    (Variable 'b')
+                                    (Variable 'z')
+                                    ( Application
+                                        (Variable 'a')
+                                        (Variable 'b')
+                                    )
                                 )
                             )
                         )
@@ -282,13 +315,15 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
+                `shouldBe` Just
                     ( Abstraction
-                        'b'
-                        ( Application
-                            (Variable 'y')
-                            (Variable 'a')
+                        'y'
+                        ( Abstraction
+                            'b'
+                            ( Application
+                                (Variable 'y')
+                                (Variable 'a')
+                            )
                         )
                     )
 
@@ -309,15 +344,17 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
+                `shouldBe` Just
                     ( Abstraction
-                        'c'
-                        ( Application
-                            (Variable 'y')
+                        'y'
+                        ( Abstraction
+                            'c'
                             ( Application
-                                (Variable 'a')
-                                (Variable 'b')
+                                (Variable 'y')
+                                ( Application
+                                    (Variable 'a')
+                                    (Variable 'b')
+                                )
                             )
                         )
                     )
@@ -342,17 +379,19 @@ spec = do
                         )
                     )
                     'y'
-                `shouldBe` Abstraction
-                    'y'
+                `shouldBe` Just
                     ( Abstraction
-                        'z'
+                        'y'
                         ( Abstraction
-                            'a'
-                            ( Application
-                                (Variable 'y')
+                            'z'
+                            ( Abstraction
+                                'a'
                                 ( Application
-                                    (Variable 'a')
-                                    (Variable 'z')
+                                    (Variable 'y')
+                                    ( Application
+                                        (Variable 'a')
+                                        (Variable 'z')
+                                    )
                                 )
                             )
                         )
@@ -363,7 +402,7 @@ spec = do
                 alphaConvert
                     (Variable 'x')
                     'y'
-                `shouldBe` Variable 'x'
+                `shouldBe` Just (Variable 'x')
 
         it "leaves plain application unchanged" $
             do
@@ -373,9 +412,11 @@ spec = do
                         (Variable 'y')
                     )
                     'z'
-                `shouldBe` Application
-                    (Variable 'x')
-                    (Variable 'y')
+                `shouldBe` Just
+                    ( Application
+                        (Variable 'x')
+                        (Variable 'y')
+                    )
 
     describe "betaReduction" $ do
         it "substitutes the argument for the bound variable" $

@@ -34,9 +34,11 @@ rename (Abstraction binder term) new old used
          in Abstraction fresh (rename inner new old (fresh : used))
     | otherwise = Abstraction binder (rename term new old used)
 
-alphaConvert :: Term -> Char -> Term
-alphaConvert (Abstraction old t) new = Abstraction new (rename t new old (new : old : collectUsed t))
-alphaConvert term _ = term
+alphaConvert :: Term -> Char -> Maybe Term -- FIX: Free var capture
+alphaConvert abst@(Abstraction old t) new
+    | new `elem` freeVars abst = Nothing
+    | otherwise = Just $ Abstraction new (rename t new old (new : old : collectUsed t))
+alphaConvert term _ = Just $ term
 
 freeVars :: Term -> [Char]
 freeVars (Variable c) = [c]
@@ -55,7 +57,7 @@ substitute v abst@(Abstraction binder inner) a
             fresh = fix (\f n -> if n `notElem` used then n else f $ next n) binder
             renamed = alphaConvert abst fresh
          in case renamed of
-                Abstraction fresh' inner' -> Abstraction fresh' (substitute v inner' a)
+                Just (Abstraction fresh' inner') -> Abstraction fresh' (substitute v inner' a)
                 _ -> error "alphaConvert returned a non-abstraction"
     | otherwise = Abstraction binder (substitute v inner a)
 
