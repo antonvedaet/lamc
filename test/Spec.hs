@@ -1,7 +1,12 @@
 module Main where
 
 import Lib
-import Test.Hspec
+    ( BetaRedex (BetaRedex)
+    , Term (Abstraction, Application, Variable)
+    , alphaConvert
+    , betaReduction
+    )
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 
 main :: IO ()
 main = hspec spec
